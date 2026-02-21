@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Vinod Intelligence Hub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    padding: 20px;
+}
+.card {
+    background: #1e293b;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 10px;
+}
+button {
+    padding: 8px;
+    margin-top: 5px;
+}
+input {
+    padding: 5px;
+}
+</style>
+</head>
+<body>
+
+<h1>📊 Vinod Intelligence Hub</h1>
+
+<div class="card">
+<h2>Live Crypto Prices</h2>
+<p>BTC: <span id="btc"></span></p>
+<p>ETH: <span id="eth"></span></p>
+</div>
+
+<div class="card">
+<h2>Scenario Simulator</h2>
+<p>Current Value:</p>
+<input id="current" type="number">
+<p>Monthly % Change:</p>
+<input id="percent" type="number">
+<p>Months:</p>
+<input id="months" type="number">
+<br>
+<button onclick="simulate()">Simulate</button>
+<p id="result"></p>
+<p style="font-size:12px;color:gray;">
+Disclaimer: This is an AI-based projection model. Not financial advice.
+</p>
+</div>
+
+<script>
+
+async function getCrypto(){
+let res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd");
+let data = await res.json();
+document.getElementById("btc").innerText = "$" + data.bitcoin.usd;
+document.getElementById("eth").innerText = "$" + data.ethereum.usd;
+}
+
+function simulate(){
+let current = parseFloat(document.getElementById("current").value);
+let percent = parseFloat(document.getElementById("percent").value)/100;
+let months = parseInt(document.getElementById("months").value);
+
+let future = current * Math.pow((1+percent), months);
+document.getElementById("result").innerText = 
+"Projected Value: " + future.toFixed(2);
+}
+
+getCrypto();
+
+</script>
+
+</body>
+</html>
