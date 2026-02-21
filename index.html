@@ -1,63 +1,143 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Vinod Intelligence Hub</title>
+<title>Vinod Market Intelligence Terminal</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body {
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-    padding: 20px;
-}
-.card {
-    background: #1e293b;
+    background: #000;
+    color: #00ff99;
+    font-family: monospace;
     padding: 15px;
+}
+
+h1 {
+    text-align: center;
+}
+
+.card {
+    border: 1px solid #00ff99;
+    padding: 10px;
     margin: 15px 0;
-    border-radius: 10px;
 }
-button {
-    padding: 8px;
-    margin-top: 5px;
-}
-input {
+
+input, select, button {
+    background: black;
+    color: #00ff99;
+    border: 1px solid #00ff99;
     padding: 5px;
+    margin: 5px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border-bottom: 1px solid #00ff99;
+    padding: 4px;
+    font-size: 12px;
 }
 </style>
 </head>
 <body>
 
-<h1>📊 Vinod Intelligence Hub</h1>
+<h1>MARKET INTELLIGENCE TERMINAL</h1>
 
 <div class="card">
-<h2>Live Crypto Prices</h2>
-<p>BTC: <span id="btc"></span></p>
-<p>ETH: <span id="eth"></span></p>
+<h2>TOP CRYPTO MARKET</h2>
+<input type="text" id="search" placeholder="Search coin name">
+<button onclick="searchCoin()">Search</button>
+<table id="cryptoTable">
+<tr>
+<th>Name</th>
+<th>Price</th>
+<th>24h %</th>
+<th>Market Cap</th>
+</tr>
+</table>
 </div>
 
 <div class="card">
-<h2>Scenario Simulator</h2>
-<p>Current Value:</p>
+<h2>FOREX PANEL</h2>
+<select id="base">
+<option value="USD">USD</option>
+<option value="EUR">EUR</option>
+<option value="INR">INR</option>
+<option value="JPY">JPY</option>
+</select>
+
+<select id="target">
+<option value="INR">INR</option>
+<option value="USD">USD</option>
+<option value="EUR">EUR</option>
+<option value="JPY">JPY</option>
+</select>
+
+<button onclick="getForex()">Get Rate</button>
+<p id="forexResult"></p>
+</div>
+
+<div class="card">
+<h2>SCENARIO ENGINE</h2>
+<p>Current Value</p>
 <input id="current" type="number">
-<p>Monthly % Change:</p>
+<p>Monthly % Change</p>
 <input id="percent" type="number">
-<p>Months:</p>
+<p>Months</p>
 <input id="months" type="number">
 <br>
-<button onclick="simulate()">Simulate</button>
-<p id="result"></p>
-<p style="font-size:12px;color:gray;">
-Disclaimer: This is an AI-based projection model. Not financial advice.
+<button onclick="simulate()">Run Projection</button>
+<p id="projection"></p>
+<p style="font-size:11px;">
+Disclaimer: This is a probability-based projection model. Not financial advice.
 </p>
 </div>
 
 <script>
 
-async function getCrypto(){
-let res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd");
+async function loadCrypto(){
+let res = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false");
 let data = await res.json();
-document.getElementById("btc").innerText = "$" + data.bitcoin.usd;
-document.getElementById("eth").innerText = "$" + data.ethereum.usd;
+
+let table = document.getElementById("cryptoTable");
+
+data.forEach(coin => {
+let row = table.insertRow();
+row.insertCell(0).innerText = coin.name;
+row.insertCell(1).innerText = "$" + coin.current_price;
+row.insertCell(2).innerText = coin.price_change_percentage_24h.toFixed(2) + "%";
+row.insertCell(3).innerText = "$" + coin.market_cap.toLocaleString();
+});
+}
+
+async function searchCoin(){
+let name = document.getElementById("search").value.toLowerCase();
+let res = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=" + name);
+let data = await res.json();
+
+if(data.length === 0){
+alert("Coin not found.");
+return;
+}
+
+alert(
+data[0].name + 
+"\nPrice: $" + data[0].current_price +
+"\n24h: " + data[0].price_change_percentage_24h + "%"
+);
+}
+
+async function getForex(){
+let base = document.getElementById("base").value;
+let target = document.getElementById("target").value;
+
+let res = await fetch("https://api.exchangerate.host/latest?base=" + base);
+let data = await res.json();
+
+document.getElementById("forexResult").innerText =
+"1 " + base + " = " + data.rates[target] + " " + target;
 }
 
 function simulate(){
@@ -66,11 +146,23 @@ let percent = parseFloat(document.getElementById("percent").value)/100;
 let months = parseInt(document.getElementById("months").value);
 
 let future = current * Math.pow((1+percent), months);
-document.getElementById("result").innerText = 
-"Projected Value: " + future.toFixed(2);
+
+let interpretation = "";
+
+if(percent > 0.02){
+interpretation = "High momentum continuation scenario.";
+} else if(percent < -0.02){
+interpretation = "Downtrend acceleration risk.";
+} else {
+interpretation = "Low volatility / consolidation phase.";
 }
 
-getCrypto();
+document.getElementById("projection").innerText =
+"Projected Value: " + future.toFixed(2) + 
+"\nScenario: " + interpretation;
+}
+
+loadCrypto();
 
 </script>
 
